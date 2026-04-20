@@ -38,7 +38,10 @@ cd mcp_getting_started
 
 # 创建虚拟环境并进入虚拟环境
 uv venv
+# Windows
 .venv\Scripts\activate.bat
+# Mac
+source .venv/bin/activate
 
 # 安装依赖
 uv add "mcp[cli]" httpx openai
@@ -76,27 +79,31 @@ async def web_search(query: str) -> str:
         搜索结果的总结
     """
 
-    async with httpx.AsyncClient() as client:
+   async with httpx.AsyncClient() as client:
         response = await client.post(
-            'https://open.bigmodel.cn/api/paas/v4/tools',
-            headers={'Authorization': '换成你自己的API KEY'},
+            'https://open.bigmodel.cn/api/paas/v4/web_search',
+            headers={
+                "Authorization": "Bearer YOUR-API-KEY",
+                "Content-Type": "application/json"
+            },
             json={
-                'tool': 'web-search-pro',
-                'messages': [
-                    {'role': 'user', 'content': query}
-                ],
-                'stream': False
+                "search_query": query,
+                "search_engine": "search_std",
+                "search_intent": False,
+                "count": 10,
+                "search_domain_filter": "<string>",
+                "search_recency_filter": "noLimit",
+                "content_size": "medium",
+                "request_id": "<string>",
+                "user_id": "<string>"
             }
         )
 
+        response = json.loads(response.text)
+        
         res_data = []
-        for choice in response.json()['choices']:
-            for message in choice['message']['tool_calls']:
-                search_results = message.get('search_result')
-                if not search_results:
-                    continue
-                for result in search_results:
-                    res_data.append(result['content'])
+        for result in response["search_result"]:
+            res_data.append(result["content"])
 
         return '\n\n\n'.join(res_data)
 ```
